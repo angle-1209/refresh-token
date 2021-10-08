@@ -1,6 +1,6 @@
 import Users from '../models/Users.js';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import encryptHelper from '../../helpers/encrypt.js';
+import { setAccessToken, setRefreshToken } from '../../helpers/token.js';
 
 const errorHandler = (err, code) => {
   let message = {
@@ -23,27 +23,6 @@ const errorHandler = (err, code) => {
   return message;
 };
 
-const setAccessToken = (id) => {
-  return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET_KEY, {
-    expiresIn: '15s',
-  });
-};
-
-const setRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.REFRESH_TOKEN_SECRET_KEY, {
-    expiresIn: '3d',
-  });
-};
-
-const encryptController = async (type, password, plainPassword = '') => {
-  if (type === 'hash') {
-    return await bcrypt.hash(password, 10);
-  }
-  if (type === 'compare') {
-    return await bcrypt.compare(plainPassword, password);
-  }
-};
-
 const usersRegistration = async (req, res) => {
   const { email, password } = req.body;
 
@@ -54,7 +33,8 @@ const usersRegistration = async (req, res) => {
     });
     const result = await newUser.save();
     const ACCESS_TOKEN = setAccessToken(result._id);
-    res.json({ msg: 'Successfully create user', token: ACCESS_TOKEN }).status(200);
+    const REFRESH_TOKEN = setRefreshToken(result._id);
+    res.json({ msg: 'Successfully create user', accessToken: ACCESS_TOKEN, refreshToken: REFRESH_TOKEN }).status(200);
   } catch (error) {
     const message = errorHandler(error, error.code);
     res.json({ msg: message }).status(401);
@@ -67,16 +47,44 @@ const usersLogin = async (req, res) => {
     const user = await Users.findOne({
       email,
     });
-    if (user < 0) {
+
+    if (user === null) {
       throw 'Email not found';
     }
-    const hashedPassword = await encryptController('compare', user.password, password);
+    const hashedPassword = await encryptHelper('compare', user.password, password);
     if (!hashedPassword) {
       throw 'Wrong Password';
     }
 
-    res.json({ msg: 'Login Success' });
-  } catch (error) {}
+    const ACCESS_TOKEN = setAccessToken(user._id);
+    const REFRESH_TOKEN = setRefreshToken(user._id);
+    res.json({ msg: 'Login Success', accessToken: ACCESS_TOKEN, refreshToken: REFRESH_TOKEN }).status(200);
+  } catch (error) {
+    res.json({ msg: error }).status(401);
+  }
 };
 
-export { usersRegistration };
+const users = async (_req, res) => {
+  try {
+    const allUsers = await Users.find();
+    if (allUsers.length < 1) {
+      throw 'could not have any users';
+    }
+
+    res.json({ users: allUsers });
+  } catch (error) {
+    res.json({ msg: error }).status(401);
+  }
+};
+
+const usersRemove = async (req, res) => {
+  const { id } = req.params.id;
+  try {
+    const removedUser = await Users.deleteOne({ id });
+    res.json({ msg: `${removedUser.deletedCount} user has been deleted` });
+  } catch (error) {
+    res.json({ msg: error }).status(401);
+  }
+};
+
+export { usersRegistration, usersLogin, users, usersRemove };

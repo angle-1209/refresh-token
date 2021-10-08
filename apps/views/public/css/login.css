@@ -1,0 +1,36 @@
+.login {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  width: 30%;
+}
+
+input {
+  padding: 1rem;
+  margin: 5px 0px;
+  border: none;
+  background-color: #eee;
+}
+
+input:focus,
+input:active {
+  outline: none;
+  border: none;
+}
+
+input[type='submit'] {
+  padding: 10px 2rem;
+  border-radius: 5px;
+  color: white;
+  background-color: rgb(78, 78, 241);
+}
+.btn-parent {
+  margin-left: auto;
+}

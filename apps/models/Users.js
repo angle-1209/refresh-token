@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
-import bcrypt from 'bcrypt';
+import encryptHelper from '../../helpers/encrypt.js';
 
 const toLower = (v) => {
   return v.toLowerCase();
@@ -22,7 +22,7 @@ const UserSchema = mongoose.Schema({
 });
 
 UserSchema.pre('save', async function (next) {
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await encryptHelper('hash', this.password);
   next();
 });
 

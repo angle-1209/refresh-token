@@ -4,4 +4,10 @@ const homePage = (_req, res) => {
   });
 };
 
-export { homePage };
+const loginPage = (_req, res) => {
+  res.render('pages/login', {
+    title: 'Login Page',
+  });
+};
+
+export { homePage, loginPage };
